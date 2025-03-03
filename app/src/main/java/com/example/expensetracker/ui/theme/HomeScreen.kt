@@ -1,8 +1,12 @@
 package com.example.expensetracker.ui.theme
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -34,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -44,8 +50,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +66,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.expensetracker.R
 import com.example.expensetracker.room.ExpenseEntity
 import com.example.expensetracker.room.ExpenseViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,7 +83,57 @@ fun HomeScreen(viewModel: ExpenseViewModel = viewModel()) {
     var priceText by remember { mutableStateOf("") }
     var dateText by remember { mutableStateOf("") }
 
+@Composable
+fun AnimatedButton(
+    txt:String,
+    onClick:()->Unit,
+    modifier : Modifier=Modifier,
+)
+{
+    var isPressed by remember { mutableStateOf(false) }
 
+    val backGroundColor by animateColorAsState(
+        targetValue = if (isPressed) colorResource(R.color.Light_teal) else Color.LightGray,
+        animationSpec = tween(durationMillis = 200),
+        label = ""
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) .9f else 1f ,
+        animationSpec = tween(durationMillis = 200),
+        label = ""
+    )
+    Button(
+        onClick={
+            isPressed =true
+            onClick()
+        },
+        colors = ButtonDefaults.buttonColors(backGroundColor),
+        modifier = modifier
+            .scale(scale)
+            .pointerInput(Unit){detectTapGestures(onPress = {isPressed = true
+                tryAwaitRelease()
+                isPressed = false})}
+            .shadow(elevation = 3.dp, RoundedCornerShape(15.dp)),
+        border = BorderStroke(width = 3.dp, color = Color.DarkGray.copy(alpha = .8f))
+    )
+    {
+      Text(
+          text =txt,
+          fontSize = 20.sp,
+          fontWeight = FontWeight.SemiBold,
+          color = colorResource(R.color.black),
+          fontStyle = FontStyle.Italic
+      )
+    }
+
+    LaunchedEffect(isPressed) {
+        if (isPressed){
+        delay(200)
+        isPressed = false
+    }
+    }
+
+}
 
     Scaffold(
         containerColor = colorResource(R.color.teal_700),
@@ -87,8 +146,9 @@ fun HomeScreen(viewModel: ExpenseViewModel = viewModel()) {
                         verticalArrangement = Arrangement.Center
                     ){
                         Text(
-                            text = "Total Expense $sumOfExpense Eg ",
-                            fontSize = 35.sp,
+                            text = if (sumOfExpense==null) "Total Expense 0.0 Eg" else "Total Expense $sumOfExpense Eg",
+                            modifier = Modifier.fillMaxWidth(),
+                            fontSize = 30.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = colorResource(R.color.white),
                             fontStyle = FontStyle.Italic
@@ -108,44 +168,20 @@ fun HomeScreen(viewModel: ExpenseViewModel = viewModel()) {
                         horizontalArrangement = Arrangement.SpaceAround
                     )
                     {
-                        Button(
-                            modifier = Modifier
-                                .fillMaxWidth(.4f)
-                                .shadow(elevation = 3.dp, RoundedCornerShape(15.dp)),
-                            onClick = {
-                                viewModel.clearAllExpenses()
-                            },
-                            colors = ButtonDefaults.buttonColors(Color.LightGray),
-                            border = BorderStroke(width = 3.dp, color = Color.DarkGray.copy(alpha = .8f))
-                        ) {
-                            Text(
-                                text = "clear",
-                                fontSize = 25.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = colorResource(R.color.black),
-                                fontStyle = FontStyle.Italic
-                            )
-                        }
-                        Button(
-                            modifier = Modifier
-                                .fillMaxWidth(.7f)
-                                .shadow(elevation = 3.dp, RoundedCornerShape(16.dp)),
-                            onClick = {
-                                coroutineScope.launch { sheetState.bottomSheetState.expand() }
-                            },
-                            colors = ButtonDefaults.buttonColors(Color.LightGray),
-                            border = BorderStroke(width = 3.dp, color = Color.DarkGray.copy(alpha = .8f))
-                        ) {
-                            Text(
-                                text = "Add",
-                                fontSize = 25.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = colorResource(R.color.black),
-                                fontStyle = FontStyle.Italic
-                            )
-                        }
-                    }
+                        AnimatedButton(
+                            txt = "clear",
+                            onClick = {viewModel.clearAllExpenses()},
+                            modifier = Modifier.weight(1f)
 
+                        )
+                        Spacer(modifier = Modifier.padding(5.dp))
+                        AnimatedButton(
+                            txt = "Add",
+                            onClick = {coroutineScope.launch { sheetState.bottomSheetState.expand() }},
+                            modifier = Modifier.weight(1f)
+
+                        )
+                    }
                 },
                 containerColor = colorResource(R.color.teal_700)
             )
@@ -250,11 +286,14 @@ fun HomeScreen(viewModel: ExpenseViewModel = viewModel()) {
                             )
                         }
                     }
-
+                    HorizontalDivider(
+                        modifier = Modifier.shadow(elevation = 1.5.dp),
+                        color = colorResource(R.color.black),
+                        thickness = .5.dp
+                    )
                 }
             }
         }
-
         BottomSheetScaffold(
             scaffoldState = sheetState,
             sheetContent = {
@@ -306,26 +345,35 @@ fun HomeScreen(viewModel: ExpenseViewModel = viewModel()) {
                             focusedLabelColor = Color.Black,
                         )
                     )
-                    Button(
-                        modifier = Modifier.shadow(elevation = 4.dp, RoundedCornerShape(16.dp)),
+                    AnimatedButton(
+                        txt = "Save Expense",
                         onClick = {
                             if (thingText.isNotEmpty() && priceText.isNotEmpty()&& dateText.isNotEmpty()){
                                 viewModel.insertExpense(ExpenseEntity(id = idValue, thing = thingText, price = priceText.toInt(), date = dateText))
                                 coroutineScope.launch { sheetState.bottomSheetState.hide() }
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(Color.LightGray),
-                        border = BorderStroke(width = 3.dp, color = Color.DarkGray.copy(alpha = .8f))
+                        }
                     )
-                    {
-                        Text(
-                            text = "Save Expense",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = colorResource(R.color.black),
-                            fontStyle = FontStyle.Italic
-                        )
-                    }
+//                    Button(
+//                        modifier = Modifier.shadow(elevation = 4.dp, RoundedCornerShape(16.dp)),
+//                        onClick = {
+//                            if (thingText.isNotEmpty() && priceText.isNotEmpty()&& dateText.isNotEmpty()){
+//                                viewModel.insertExpense(ExpenseEntity(id = idValue, thing = thingText, price = priceText.toInt(), date = dateText))
+//                                coroutineScope.launch { sheetState.bottomSheetState.hide() }
+//                            }
+//                        },
+//                        colors = ButtonDefaults.buttonColors(Color.LightGray),
+//                        border = BorderStroke(width = 3.dp, color = Color.DarkGray.copy(alpha = .8f))
+//                    )
+//                    {
+//                        Text(
+//                            text = "Save Expense",
+//                            fontSize = 20.sp,
+//                            fontWeight = FontWeight.SemiBold,
+//                            color = colorResource(R.color.black),
+//                            fontStyle = FontStyle.Italic
+//                        )
+//                    }
                     }
                 },
             sheetPeekHeight = 0.dp // عشان يكون مخفي في البداية
