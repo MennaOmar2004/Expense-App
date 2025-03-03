@@ -354,26 +354,6 @@ fun AnimatedButton(
                             }
                         }
                     )
-//                    Button(
-//                        modifier = Modifier.shadow(elevation = 4.dp, RoundedCornerShape(16.dp)),
-//                        onClick = {
-//                            if (thingText.isNotEmpty() && priceText.isNotEmpty()&& dateText.isNotEmpty()){
-//                                viewModel.insertExpense(ExpenseEntity(id = idValue, thing = thingText, price = priceText.toInt(), date = dateText))
-//                                coroutineScope.launch { sheetState.bottomSheetState.hide() }
-//                            }
-//                        },
-//                        colors = ButtonDefaults.buttonColors(Color.LightGray),
-//                        border = BorderStroke(width = 3.dp, color = Color.DarkGray.copy(alpha = .8f))
-//                    )
-//                    {
-//                        Text(
-//                            text = "Save Expense",
-//                            fontSize = 20.sp,
-//                            fontWeight = FontWeight.SemiBold,
-//                            color = colorResource(R.color.black),
-//                            fontStyle = FontStyle.Italic
-//                        )
-//                    }
                     }
                 },
             sheetPeekHeight = 0.dp // عشان يكون مخفي في البداية
